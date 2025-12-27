@@ -215,6 +215,11 @@
 
   firebase.initializeApp(FIREBASE_CONFIG);
   window.firebaseAuth = firebase.auth();
+
+  window.googleSignIn = async function () {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    return firebaseAuth.signInWithPopup(provider);
+  };
 </script>
 
   <script type="text/babel">
@@ -627,4 +632,3 @@
 
 </body>
 </html>
-
