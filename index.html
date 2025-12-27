@@ -9,6 +9,9 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script crossorigin src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 
   <style>
     :root{
@@ -198,7 +201,22 @@
 <body>
   <div id="root"></div>
 
+  
   <!-- App code (React) -->
+   <script>
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyBaXuOEHL0Ps947IhPUZWFLC14z7fERJiQ",
+    authDomain: "stranger-things-23783.firebaseapp.com",
+    projectId: "stranger-things-23783",
+    storageBucket: "stranger-things-23783.firebasestorage.app",
+    messagingSenderId: "16963374906",
+    appId: "1:16963374906:web:a7bf3bb36124d9ab814a03"
+  };
+
+  firebase.initializeApp(FIREBASE_CONFIG);
+  window.firebaseAuth = firebase.auth();
+</script>
+
   <script type="text/babel">
 
   /*************************************************************************
@@ -346,16 +364,29 @@
 
           <div className="toolbar">
             <input className="input" placeholder="Search characters..." value={filterQuery} onChange={e=>setFilterQuery(e.target.value)} style={{width:220, marginRight:6}} />
-            { user ? (
-              <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                <div style={{fontSize:13, color:'var(--muted)'}}>Signed in as <strong style={{color:'var(--text)'}}>{user}</strong></div>
-                <button className="btn" onClick={()=>setShowLogin(true)}>Switch</button>
-                <button className="btn" onClick={handleLogout}>Sign out</button>
-              </div>
             ) : (
-              <button className="btn" onClick={()=>setShowLogin(true)}>Sign in</button>
-            )}
-            <button className="btn" title="Clear all local data" onClick={clearAllLocal} style={{marginLeft:8}}>Clear All</button>
+  <div style={{display:'flex', gap:8, alignItems:'center'}}>
+    <button
+      className="btn"
+      onClick={async () => {
+        try {
+          const result = await window.signInWithGoogle();
+          const name = result.user.displayName || result.user.email;
+          handleLogin(name); // reuse your existing login system
+        } catch (e) {
+          alert("Google sign-in cancelled");
+        }
+      }}
+    >
+      Sign in with Google
+    </button>
+
+    <button className="btn" onClick={()=>setShowLogin(true)}>
+      Sign in (name)
+    </button>
+  </div>
+)
+
           </div>
         </div>
 
@@ -596,4 +627,3 @@
 
 </body>
 </html>
-
