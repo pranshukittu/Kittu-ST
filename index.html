@@ -369,15 +369,22 @@
 
           <div className="toolbar">
             <input className="input" placeholder="Search characters..." value={filterQuery} onChange={e=>setFilterQuery(e.target.value)} style={{width:220, marginRight:6}} />
-            ) : (
+  {user ? (
   <div style={{display:'flex', gap:8, alignItems:'center'}}>
+    <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+          Signed in as <strong style={{ color: 'var(--text)' }}>{user}</strong>
+        </div>
+  <button className="btn" onClick={handleLogout}>Sign out</button>
+      </div>
+          ) : (
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
     <button
       className="btn"
       onClick={async () => {
         try {
-          const result = await window.signInWithGoogle();
-          const name = result.user.displayName || result.user.email;
-          handleLogin(name); // reuse your existing login system
+          const result = await window.googleSignIn();
+              const name = result.user.displayName || result.user.email;
+              handleLogin(name);
         } catch (e) {
           alert("Google sign-in cancelled");
         }
@@ -390,7 +397,14 @@
       Sign in (name)
     </button>
   </div>
-)
+)}
+    <button
+      className="btn"
+      onClick={clearAllLocal}
+      style={{ marginLeft: 8 }}
+    >
+      Clear All
+    </button>
 
           </div>
         </div>
