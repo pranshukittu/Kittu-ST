@@ -124,103 +124,28 @@
   </div>
 
   <!-- Firebase init & helpers -->
-  <script>
-    /*************************************************************************
-     * IMPORTANT: Replace the FIREBASE_CONFIG object below with your project's
-     * config from Firebase console (Project Settings → Your apps → SDK config)
-     *************************************************************************/
-    const FIREBASE_CONFIG = {
-      // <-- REPLACE THESE VALUES with your Firebase web app config
-      apiKey: "AIzaSyDAVeSuM5nA5xdJ0TlZUHmc7SB8l2AUSbA",
-  authDomain: "st-kittu.firebaseapp.com",
-  projectId: "st-kittu",
-  storageBucket: "st-kittu.firebasestorage.app",
-  messagingSenderId: "88226710538",
-  appId: "1:88226710538:web:f2bda4fe86b3568d1a8bf3",
-  measurementId: "G-585W045D6X"
-    };
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup } 
+    from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    // initialize Firebase
-    try {
-      firebase.initializeApp(FIREBASE_CONFIG);
-      var firebaseAuth = firebase.auth();
-      var firebaseDb = firebase.firestore();
-    } catch(e){
-      console.warn('Firebase init error (did you paste config?):', e);
-      firebaseAuth = null; firebaseDb = null;
-    }
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    appId: "YOUR_APP_ID"
+  };
 
-    // Save a single user's vote to Firestore (doc per user+char)
-    async function saveVoteToFirestore(imgPath, uid, stars, label){
-      if(!firebaseDb) return false;
-      try {
-        const slug = imgPath.replace(/[^a-z0-9]/gi, '_');
-        const docId = `${slug}_${uid}`;
-        await firebaseDb.collection('votes').doc(docId).set({
-          img: imgPath, uid, stars, label, ts: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        return true;
-      } catch (err) {
-        console.error('saveVoteToFirestore error', err);
-        return false;
-      }
-    }
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
 
-    // Subscribe realtime to votes collection and aggregate
-    function subscribeVotesRealtime(onUpdate){
-      if(!firebaseDb) return () => {};
-      try {
-        return firebaseDb.collection('votes').onSnapshot(snapshot => {
-          const byImg = {};
-          snapshot.forEach(doc => {
-            const d = doc.data();
-            const img = d.img;
-            byImg[img] = byImg[img] || { votes: [] };
-            byImg[img].votes.push({ uid: d.uid, stars: d.stars, label: d.label });
-          });
-          Object.keys(byImg).forEach(img => {
-            const v = byImg[img].votes;
-            const count = v.length;
-            const avg = count ? (v.reduce((s,x)=>s+(x.stars||0),0)/count) : 0;
-            const mode = (() => { const map = {}; v.forEach(x=>map[x.label]=(map[x.label]||0)+1); let best=null,bc=-1; Object.entries(map).forEach(([k,c]) => { if(c>bc){best=k;bc=c;} }); return best; })();
-            byImg[img].count = count; byImg[img].avg = +avg.toFixed(2); byImg[img].modeLabel = mode || '—';
-          });
-          onUpdate(byImg);
-        }, err => { console.error('subscribeVotesRealtime error', err); onUpdate({}); });
-      } catch(e){ console.error('subscribeVotesRealtime init error', e); return () => {}; }
-    }
-
-    // Sign-in with Google popup
-    async function signInWithGooglePopup(){
-      if(!firebaseAuth) throw new Error('Firebase not initialized');
-      const provider = new firebase.auth.GoogleAuthProvider();
-      return firebaseAuth.signInWithPopup(provider);
-    }
-    function signOutFirebase(){ if(firebaseAuth) return firebaseAuth.signOut(); return Promise.resolve(); }
-
-    // click-to-open full image handler
-    document.addEventListener('click', function(e){
-      const el = e.target;
-      if(el.tagName === 'IMG' && el.closest && el.closest('.photo')){
-        const src = el.getAttribute('src');
-        if(src) window.open(src, '_blank');
-      }
-    });
-
-    // intro popup handlers
-    (function(){
-      const popup = document.getElementById('st-popup');
-      const closeBtn = document.getElementById('st-popup-close');
-      const poster = document.getElementById('st-poster-img');
-      function showPopup(){ popup.style.display = 'flex'; closeBtn.focus(); }
-      function hidePopup(){ popup.style.display = 'none'; }
-      closeBtn.addEventListener('click', hidePopup);
-      popup.addEventListener('click', function(e){ if(e.target === popup) hidePopup(); });
-      document.addEventListener('keydown', function(e){ if(e.key === 'Escape') hidePopup(); });
-      poster && poster.addEventListener('click', function(){ const src = poster.getAttribute('src'); if(src) window.open(src, '_blank'); });
-      setTimeout(showPopup, 450);
-    })();
-  </script>
+  document.getElementById("googleLogin").onclick = async () => {
+    const result = await signInWithPopup(auth, provider);
+    document.getElementById("user").innerText =
+      "Welcome " + result.user.displayName;
+  };
+</script>
 
   <!-- App code (React) -->
   <script type="text/babel">
@@ -401,10 +326,19 @@
                 </div>
               ) : (
                 <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                  <button className="btn" onClick={async ()=> {
-                    try{ await signInWithGooglePopup(); } catch(e){ alert('Sign-in canceled or error'); console.error(e); }
-                  }}>Sign in (Google)</button>
-                  <button className="btn" onClick={()=>setShowLogin(true)}>Sign in (name)</button>
+                  <button
+  className="btn"
+  onClick={async () => {
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await firebase.auth().signInWithPopup(provider);
+    } catch (e) {
+      alert("Login cancelled");
+    }
+  }}
+>
+  Sign in with Google
+</button>
                 </div>
               )}
               <button className="btn" title="Clear all local data" onClick={clearAllLocal} style={{marginLeft:8}}>Clear All</button>
@@ -638,3 +572,4 @@
 
 </body>
 </html>
+
